@@ -7,16 +7,14 @@ export default function Wallet() {
 
   const [balance, setBalance] = useState(15200.75);
   const [transactions, setTransactions] = useState([
-    { id: 1, type: "Deposit", amount: 5000, date: "Oct 1, 2025" },
     { id: 2, type: "Sale - Corn (5kg)", amount: 320, date: "Oct 2, 2025" },
     { id: 3, type: "Sale - Pork Liempo (1kg)", amount: 280, date: "Oct 4, 2025" },
-    { id: 4, type: "Withdrawal", amount: -2000, date: "Oct 6, 2025" },
   ]);
 
   const addFunds = () => {
     setBalance(balance + 1000);
     setTransactions([
-      { id: Date.now(), type: "Deposit (Demo)", amount: 1000, date: "Oct 7, 2025" },
+      { id: Date.now(), type: "Sale - Chicken Breast (Demo)", amount: 1000, date: "Oct 17, 2025" },
       ...transactions,
     ]);
   };
