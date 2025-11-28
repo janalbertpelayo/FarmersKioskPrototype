@@ -91,7 +91,7 @@ export default function Marketplace() {
               ListEmptyComponent={<Text style={styles.empty}>No products found.</Text>}
               renderItem={({ item }) => (
                 <View style={styles.card}>
-                  <Image source={{ uri: item.image }} style={styles.image} />
+                  <Image source={item.image_url} style={styles.image} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.name}>{item.name}</Text>
                     <Text style={styles.quantity}>Qty: {item.quantity}</Text>

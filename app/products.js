@@ -67,7 +67,7 @@ export default function Products() {
             item.category === "Meat" && styles.meatCard,
             item.category === "Livestock" && styles.livestockCard
           ]}>
-            <Image source={{ uri: item.image_url || "https://via.placeholder.com/100" }} style={styles.image} />
+            <Image source={ item.image_url || "https://via.placeholder.com/100" } style={styles.image} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.quantity}>Qty: {item.quantity}</Text>
@@ -162,6 +162,17 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  image: { width: 60, height: 60, borderRadius: 8, marginRight: 10 },
+    name: { fontWeight: "bold", fontSize: 16 },
+    quantity: { fontSize: 14, color: "#333", marginTop: 2 },
+    categoryTag: { marginTop: 4, fontSize: 13, color: "#4CAF50" },
+    livestockInfo: { fontSize: 13, color: "#795548" },
+    empty: { textAlign: "center", marginTop: 20, color: "#888" },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.2)",
+      justifyContent: "flex-end",
   },
 });
 
