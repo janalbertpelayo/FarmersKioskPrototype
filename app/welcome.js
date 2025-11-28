@@ -1,6 +1,6 @@
 // app/welcome.tsx
-import { View, Text, StyleSheet, TouchableOpacity, Image, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
+import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Welcome() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function Welcome() {
 
       <TouchableOpacity
         activeOpacity={0.8}
-        onPress={() => router.replace("/")}
+        onPress={() => router.push("/login")}
         style={styles.startButton}
       >
         <Text style={styles.startText}>👉 Touch to Start</Text>

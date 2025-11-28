@@ -1,12 +1,12 @@
 // app/postproduct.tsx
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
-import { useState } from "react";
-import { useRouter } from "expo-router";
-import { useProducts } from "../context/productcontext";
 import { Picker } from "@react-native-picker/picker";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { addProduct } from "../services/productService";
 
 export default function PostProduct() {
-  const [type, setType] = useState("Crop");
+  const [category, setCategory] = useState("Crop");
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [quantityUnit, setQuantityUnit] = useState("kg");
@@ -18,74 +18,86 @@ export default function PostProduct() {
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const router = useRouter();
-  const { addProduct } = useProducts();
 
-  // Unit options based on type
+  // Unit options based on category
   const cropUnits = ["kg", "sack", "bundle", "crate"];
   const meatUnits = ["kg", "piece", "pack"];
   const livestockUnits = ["head", "pair"];
-  const unitOptions = type === "Crop" ? cropUnits : type === "Meat" ? meatUnits : livestockUnits;
+  const unitOptions = category === "Crop" ? cropUnits : category === "Meat" ? meatUnits : livestockUnits;
 
-  const handlePost = () => {
-    if (!name || !price || !quantity || (type === "Livestock" && (!breed || !age || !gender))) {
+  const handlePost = async () => {
+    if (!name || !price || !quantity || (category === "Livestock" && (!breed || !age || !gender))) {
       alert("⚠️ Please fill all fields.");
       return;
     }
 
-    const newProduct = {
-      category: type,
-      name: `${name}`,
-      quantity: `${quantity} ${quantityUnit}`,
-      price: `₱${price} / ${priceUnit}`,
-      desc,
-      image: "https://via.placeholder.com/100",
-      ...(type === "Livestock" && { breed, age, gender }),
-    };
+    try {
+      // Upload image and get URL (replace with your image picker logic)
+      // For now, use a placeholder image
+      const imageUrl = "https://via.placeholder.com/100";
+      // If you have an image picker, use:
+      // const imageUrl = await uploadProductImage(selectedImageFile, name);
 
-    addProduct(newProduct); // Save to global list
-    alert(`✅ ${type} posted: ${name}`);
-    setName(""); setPrice(""); setDesc(""); setQuantity(""); setBreed(""); setAge(""); setGender("");
+      await addProduct({
+        image_url: imageUrl,
+        name,
+        category,
+        status: "available",
+        price,
+        price_unit: priceUnit,
+        quantity,
+        quantity_unit: quantityUnit,
+        desc,
+        ...(category === "Livestock" && { breed, age, gender }),
+        createdAt: new Date(),
+      });
 
-    router.replace("/products"); // Go to My Products after posting
+      alert(`✅ ${category} posted: ${name}`);
+      setName(""); setPrice(""); setDesc(""); setQuantity(""); setBreed(""); setAge(""); setGender("");
+      router.replace("/products");
+    } catch (e) {
+      alert("❌ Failed to post product.");
+      console.error(e);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🛒 Post Product</Text>
-      <Text style={styles.subtitle}>Select Product Type</Text>
+      <Text style={styles.subtitle}>Select Product Category</Text>
 
       <View style={styles.toggleRow}>
         <TouchableOpacity
-          style={[styles.toggle, type === "Crop" && styles.activeToggle]}
+          style={[styles.toggle, category === "Crop" && styles.activeToggle]}
           onPress={() => {
-            setType("Crop");
+            setCategory("Crop");
             setQuantityUnit("kg");
             setPriceUnit("kg");
           }}
         >
-          <Text style={[styles.toggleText, type === "Crop" && styles.activeText]}>🌾 Crop</Text>
+          <Text style={[styles.toggleText, category === "Crop" && styles.activeText]}>🌾 Crop</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.toggle, type === "Meat" && styles.activeToggle]}
+          style={[styles.toggle, category === "Meat" && styles.activeToggle]}
           onPress={() => {
-            setType("Meat");
+            setCategory("Meat");
             setQuantityUnit("kg");
             setPriceUnit("kg");
           }}
         >
-          <Text style={[styles.toggleText, type === "Meat" && styles.activeText]}>🍖 Meat</Text>
+          <Text style={[styles.toggleText, category === "Meat" && styles.activeText]}>🍖 Meat</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.toggle, type === "Livestock" && styles.activeToggle]}
+          style={[styles.toggle, category === "Livestock" && styles.activeToggle]}
           onPress={() => {
-            setType("Livestock");
+            setCategory("Livestock");
             setQuantityUnit("head");
             setPriceUnit("head");
           }}
         >
-          <Text style={[styles.toggleText, type === "Livestock" && styles.activeText]}>🐄 Livestock</Text>
+          <Text style={[styles.toggleText, category === "Livestock" && styles.activeText]}>🐄 Livestock</Text>
         </TouchableOpacity>
       </View>
 
@@ -96,7 +108,7 @@ export default function PostProduct() {
 
       <TextInput
         style={styles.input}
-        placeholder={`${type} Name`}
+        placeholder={`${category} Name`}
         value={name}
         onChangeText={setName}
       />
@@ -110,7 +122,7 @@ export default function PostProduct() {
           onChangeText={setQuantity}
           keyboardType="numeric"
         />
-        <View style={[styles.pickerWrapper, { flex: 1}]}>
+        <View style={[styles.pickerWrapper, { flex: 1 }]}>
           <Picker
             selectedValue={quantityUnit}
             onValueChange={setQuantityUnit}
@@ -156,7 +168,7 @@ export default function PostProduct() {
       />
 
       {/* Livestock-specific fields */}
-      {type === "Livestock" && (
+      {category === "Livestock" && (
         <>
           <TextInput
             style={styles.input}
@@ -179,11 +191,13 @@ export default function PostProduct() {
         </>
       )}
 
-      <TouchableOpacity style={styles.button} onPress={handlePost}>
-        <Text style={styles.buttonText}>Post {type}</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handlePost}
+      >
+        <Text style={styles.buttonText}>Post Product</Text>
       </TouchableOpacity>
 
-      {/* Move the back button to the very bottom using flex */}
       <View style={{ flex: 1 }} />
       <TouchableOpacity
         style={styles.backBottomBtn}
