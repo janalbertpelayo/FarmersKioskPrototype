@@ -1,7 +1,15 @@
+import { MaterialIcons } from '@expo/vector-icons';
+import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View, TextInput, SafeAreaView } from "react-native";
+import { FlatList, Image, Modal, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useProducts } from "../context/productcontext";
+
+const users = [
+  { uid: "user1", displayName: "Juan Dela Cruz" },
+  { uid: "user2", displayName: "Maria Santos" },
+  // Add more users as needed
+];
 
 export default function Marketplace() {
   const router = useRouter();
@@ -9,10 +17,15 @@ export default function Marketplace() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [cartModalVisible, setCartModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [cartQuantity, setCartQuantity] = useState("");
+  const [cartUnit, setCartUnit] = useState("");
 
   const menuItems = [
     { title: "🛍️ My Products", route: "/products" },
     { title: " +  Post Products", route: "/postproduct" },
+    { title: "🛒 My Cart", route: "/postproduct" },
     { title: "🚚 Logistics", route: "/logistics" },
     { title: "💰 Wallet", route: "/wallet" },
     { title: "💬 Community", route: "/community" },
@@ -24,6 +37,8 @@ export default function Marketplace() {
     { key: "Meat", label: "🍖 Meat" },
     { key: "Livestock", label: "🐄 Livestock" },
   ];
+
+  const unitOptions = ["kg", "gram", "sack", "bundle", "head", "piece", "tray", "crate", "bunch", "liter"]; // Example unit options
 
   // Filter products by category and search
   const filteredProducts = products.filter(
@@ -40,14 +55,29 @@ export default function Marketplace() {
       )
   );
 
+  const handleAddToCart = () => {
+    if (selectedProduct && cartQuantity && cartUnit) {
+      addToCart(selectedProduct, cartQuantity, cartUnit);
+      setCartModalVisible(false);
+      setCartQuantity("");
+      setCartUnit("");
+    }
+  };
+
+  function getOwnerName(userId) {
+    // Example: lookup from users state or fetch from DB
+    const user = users.find(u => u.uid === userId);
+    return user ? user.displayName : "Unknown";
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>🛒 Marketplace</Text>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.postBtn} onPress={() => router.push("/postproduct")}>
-              <Text style={styles.postBtnText}>＋</Text>
+            <TouchableOpacity style={styles.cartBtn} onPress={() => router.push("/cart")}> 
+              <Text style={styles.cartBtnText}>🛒</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuBtn} onPress={() => setMenuVisible(true)}>
               <Text style={styles.menuBtnText}>☰</Text>
@@ -111,6 +141,15 @@ export default function Marketplace() {
                       </>
                     )}
                   </View>
+                  <TouchableOpacity
+                    style={styles.cartIcon}
+                    onPress={() => {
+                      setSelectedProduct(item);
+                      setCartModalVisible(true);
+                    }}
+                  >
+                    <MaterialIcons name="add-shopping-cart" size={28} color="#4CAF50" />
+                  </TouchableOpacity>
                 </View>
               )}
             />
@@ -121,14 +160,14 @@ export default function Marketplace() {
         <Modal
           visible={menuVisible}
           transparent
-          animationType="fade"
+          animationType="slide"
           onRequestClose={() => setMenuVisible(false)}
         >
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setMenuVisible(false)}>
+          <View style={styles.menuOverlay}>
             <View style={styles.menuModal}>
-              {menuItems.map((item, idx) => (
+              {menuItems.map((item) => (
                 <TouchableOpacity
-                  key={idx}
+                  key={item.title}
                   style={styles.menuItem}
                   onPress={() => {
                     setMenuVisible(false);
@@ -138,8 +177,78 @@ export default function Marketplace() {
                   <Text style={styles.menuItemText}>{item.title}</Text>
                 </TouchableOpacity>
               ))}
+              <TouchableOpacity
+                style={styles.cartCancelBtn}
+                onPress={() => setMenuVisible(false)}
+              >
+                <Text style={styles.cartCancelText}>Close</Text>
+              </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
+        </Modal>
+
+        {/* Cart Modal */}
+        <Modal
+          visible={cartModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setCartModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.cartModal}>
+              {selectedProduct && (
+                <>
+                  <Image
+                    source={ selectedProduct.image_url }
+                    style={styles.cartImage}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.cartPrice}>
+                    {selectedProduct.price}  {selectedProduct.price_unit}
+                  </Text>
+                  <Text style={styles.cartAvailable}>
+                    Available: {selectedProduct.quantity} {selectedProduct.quantity_unit}
+                  </Text>
+                  <Text style={styles.cartOwner}>
+                    Seller: {getOwnerName(selectedProduct.user_id)}
+                  </Text>
+
+                  {/* User Inputs */}
+                  <View style={{ flexDirection: "row", width: "100%", marginBottom: 8 }}>
+                    <TextInput
+                      style={[styles.cartInput, { flex: 2, marginRight: 8, marginBottom: 0 }]}
+                      placeholder="Quantity"
+                      keyboardType="numeric"
+                      value={cartQuantity}
+                      onChangeText={setCartQuantity}
+                    />
+                    <Picker
+                      selectedValue={cartUnit}
+                      onValueChange={setCartUnit}
+                      style={[styles.cartPicker, { flex: 1 }]}
+                    >
+                      {unitOptions.map((unit) => (
+                        <Picker.Item key={unit} label={unit} value={unit} />
+                      ))}
+                    </Picker>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.cartAddBtn}
+                    onPress={handleAddToCart}
+                  >
+                    <Text style={styles.cartAddText}>Add to Cart</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cartCancelBtn}
+                    onPress={() => setCartModalVisible(false)}
+                  >
+                    <Text style={styles.cartCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
         </Modal>
       </View>
       {/* Bottom Back Button */}
@@ -158,6 +267,15 @@ export default function Marketplace() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
   container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  cartBtn: {
+    marginLeft: 10,
+    padding: 8,
+    backgroundColor: '#31c036ff',
+    borderRadius: 8,
+  },
+  cartBtnText: {
+    fontSize: 20,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -176,12 +294,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
-  postBtnText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
   menuBtn: {
-    backgroundColor: "#388e3c",
+    backgroundColor: "#4CAF50",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 6,
+    marginLeft: 8,
   },
   menuBtnText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
   searchBar: {
@@ -232,7 +350,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: "center",
   },
-  image: { width: 60, height: 60, borderRadius: 8, marginRight: 10 },
+  image: { width: 60, height: 60, borderRadius: 8, marginRight: 10, fit: "cover" },
   name: { fontWeight: "bold", fontSize: 16 },
   quantity: { fontSize: 14, color: "#333", marginTop: 2 },
   categoryTag: { marginTop: 4, fontSize: 13, color: "#4CAF50" },
@@ -240,8 +358,14 @@ const styles = StyleSheet.create({
   empty: { textAlign: "center", marginTop: 20, color: "#888" },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuOverlay: {
+    flex: 1,
     justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   menuModal: {
     backgroundColor: "#fff",
@@ -276,4 +400,36 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+  cartIcon: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    zIndex: 2,
+  },
+  cartModal: {
+    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+  },
+  cartImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+    backgroundColor: "#388e3c",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+    objectFit: 'cover',
+  },
+  cartPrice: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  cartAvailable: { fontSize: 16, marginBottom: 4 },
+  cartOwner: { fontSize: 15, color: '#555', marginBottom: 10 },
+  cartInput: { width: '100%', borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 10, marginBottom: 8 },
+  cartPicker: { width: '100%', height: 66, marginBottom: 8 },
+  cartAddBtn: { backgroundColor: '#4CAF50', padding: 12, borderRadius: 6, marginTop: 8, width: '100%', alignItems: 'center' },
+  cartAddText: { color: '#fff', fontWeight: 'bold' },
+  cartCancelBtn: { marginTop: 8, width: '100%', alignItems: 'center' },
+  cartCancelText: { color: '#4CAF50', fontWeight: 'bold' },
 });

@@ -22,7 +22,10 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <TouchableOpacity onPress={() => router.push("/")}>
+        <Text style={styles.title}>Login</Text>
+      </TouchableOpacity>
+      
       <TextInput
         style={styles.input}
         placeholder="Email"
