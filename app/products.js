@@ -1,13 +1,14 @@
 // app/products.js
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useState } from "react";
+import { Alert, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useProducts } from "../context/productcontext";
 
 export default function Products() {
   const router = useRouter();
-  const { products, removeProduct } = useProducts();
+  const { products, removeProduct, fetchProducts } = useProducts(); // Ensure fetchProducts is available in the context
   const [activeTab, setActiveTab] = useState("Crop");
+  const [refreshing, setRefreshing] = useState(false);
 
   const filteredProducts = products.filter((p) => p.category === activeTab);
 
@@ -21,6 +22,12 @@ export default function Products() {
       ]
     );
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchProducts(); // Fetch updated products from the database
+    setRefreshing(false);
+  }, [fetchProducts]);
 
   return (
     <View style={styles.container}>
@@ -93,6 +100,9 @@ export default function Products() {
             </TouchableOpacity>
           </View>
         )}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
 
       <TouchableOpacity

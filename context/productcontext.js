@@ -1,13 +1,10 @@
 // context/ProductContext.js
-import React, { createContext, useState, useContext } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db } from "../firebaseConfig";
 import { getAuth } from "firebase/auth";
-import { useEffect } from "react";
-import { doc, deleteDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, onSnapshot, query, where } from "firebase/firestore";
+import { createContext, useContext, useEffect, useState } from "react";
+import { db } from "../firebaseConfig";
 
 const ProductContext = createContext(null);
-const docRef = doc(db, "products", "PRODUCT_ID_HERE");
 
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([
@@ -42,12 +39,26 @@ export const ProductProvider = ({ children }) => {
     return () => unsubscribe();
   }, [currentUser]);
 
+  // Fetch all products from Firestore
+  const fetchProducts = async () => {
+    if (!currentUser) return;
+
+    const q = query(collection(db, "products"), where("user_id", "==", currentUser.uid));
+    const snapshot = await getDocs(q);
+    const userProducts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+    setProducts((prevDemoProducts) => {
+      const demoProducts = prevDemoProducts.filter((p) => p.id <= 6);
+      return [...demoProducts, ...userProducts];
+    });
+  };
+
   const addProduct = (newProduct) => {
     setProducts((prev) => [...prev, { id: Date.now(), ...newProduct }]);
   };
 
   const removeProduct = async (id) => {
-    const product = products.find(p => p.id === id);
+    const product = products.find((p) => p.id === id);
     // Remove from Firebase if it exists there
     if (id.toString().length > 6) {
       try {
@@ -60,7 +71,7 @@ export const ProductProvider = ({ children }) => {
   };
 
   return (
-    <ProductContext.Provider value={{ products, addProduct, removeProduct }}>
+    <ProductContext.Provider value={{ products, addProduct, removeProduct, fetchProducts }}>
       {children}
     </ProductContext.Provider>
   );
